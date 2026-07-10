@@ -1,0 +1,44 @@
+@model List<GameServer>
+@{
+    ViewData["Title"] = "Servers";
+    int offlineThreshold = ViewBag.OfflineThreshold;
+    DateTime now = ViewBag.Now;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="page-title mb-0">Servers</h1>
+    @if (User.Identity!.IsAuthenticated)
+    {
+        <a class="btn btn-accent" asp-action="Create"><i class="bi bi-plus-lg"></i> Add server</a>
+    }
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Status</th><th>Name</th><th>Players</th><th>TPS</th><th>Last heartbeat</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var server in Model)
+                {
+                    var online = server.IsOnline(now, offlineThreshold);
+                    <tr>
+                        <td><span class="status-dot @(online ? "status-online" : "status-offline")"></span>@(online ? "Online" : "Offline")</td>
+                        <td><a asp-action="Details" asp-route-id="@server.Id">@server.Name</a></td>
+                        <td>@server.LastPlayerCount</td>
+                        <td>@(server.LastTps?.ToString("0.0") ?? "—")</td>
+                        <td class="text-secondary">@(server.LastHeartbeatAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "never") UTC</td>
+                        <td class="text-end"><a class="btn btn-sm btn-outline-light" asp-action="Details" asp-route-id="@server.Id">Manage</a></td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="6" class="text-center text-secondary py-4">No servers registered yet.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

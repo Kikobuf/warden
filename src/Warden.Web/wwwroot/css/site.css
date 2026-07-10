@@ -1,0 +1,77 @@
+:root {
+    --warden-accent: #5865F2; /* Discord blurple, ties the login method to the brand */
+    --warden-bg: #0e1013;
+    --warden-surface: #171a1f;
+    --warden-border: #262b33;
+}
+
+body {
+    background-color: var(--warden-bg);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+.text-accent { color: var(--warden-accent) !important; }
+
+.warden-nav {
+    background-color: var(--warden-surface);
+    border-bottom: 1px solid var(--warden-border);
+}
+
+.btn-accent {
+    background-color: var(--warden-accent);
+    border-color: var(--warden-accent);
+    color: #fff;
+}
+.btn-accent:hover {
+    background-color: #4752c4;
+    border-color: #4752c4;
+    color: #fff;
+}
+
+.card {
+    background-color: var(--warden-surface);
+    border: 1px solid var(--warden-border);
+}
+
+.stat-card {
+    border-radius: 0.75rem;
+    padding: 1.25rem 1.5rem;
+}
+
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.stat-card .stat-label {
+    color: #9aa4b2;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    margin-right: 0.4rem;
+}
+.status-online { background-color: #3ba55d; }
+.status-offline { background-color: #6b7280; }
+
+table.table {
+    --bs-table-bg: transparent;
+}
+
+code {
+    background-color: rgba(255,255,255,0.06);
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.25rem;
+}
+
+.page-title {
+    font-weight: 700;
+    margin-bottom: 1rem;
+}

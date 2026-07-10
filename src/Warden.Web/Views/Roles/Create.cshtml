@@ -1,0 +1,23 @@
+@{
+    ViewData["Title"] = "New role";
+}
+
+<h1 class="page-title">New role</h1>
+
+<div class="card p-4" style="max-width: 560px;">
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" name="name" class="form-control" required maxlength="64" />
+            <span class="text-danger">@ViewData.ModelState["name"]?.Errors.FirstOrDefault()?.ErrorMessage</span>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Description <span class="text-secondary">(optional)</span></label>
+            <textarea name="description" class="form-control" rows="2" maxlength="256"></textarea>
+        </div>
+        <p class="text-secondary small">The role is created with no permissions — add them from the Roles page after saving.</p>
+        <button type="submit" class="btn btn-accent">Create role</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div>

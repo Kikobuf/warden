@@ -1,0 +1,57 @@
+@model List<WebUser>
+@{
+    ViewData["Title"] = "Users";
+    var roles = (List<WebRole>)ViewBag.Roles;
+}
+
+<h1 class="page-title">Web users</h1>
+<p class="text-secondary">Everyone here has logged in via Discord at least once. The default role is always kept, even if unchecked below.</p>
+
+@foreach (var user in Model)
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h5 class="mb-0">
+                        @user.Username
+                        @if (user.IsDisabled)
+                        {
+                            <span class="badge text-bg-secondary ms-1">Disabled</span>
+                        }
+                    </h5>
+                    <p class="text-secondary small mb-0">
+                        Discord ID <code>@user.DiscordUserId</code> ·
+                        last login @(user.LastLoginAt?.ToString("yyyy-MM-dd HH:mm") ?? "never") UTC
+                    </p>
+                </div>
+                <form method="post" asp-action="ToggleDisabled" asp-route-id="@user.Id">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-sm @(user.IsDisabled ? "btn-outline-success" : "btn-outline-danger")">
+                        @(user.IsDisabled ? "Enable" : "Disable")
+                    </button>
+                </form>
+            </div>
+
+            <form method="post" asp-action="UpdateRoles" asp-route-id="@user.Id" class="d-flex align-items-end gap-2 flex-wrap">
+                @Html.AntiForgeryToken()
+                <div>
+                    <label class="form-label small mb-1">Roles</label>
+                    <select name="roleIds" class="form-select form-select-sm" multiple size="@Math.Min(roles.Count, 4)" style="min-width: 260px;">
+                        @foreach (var role in roles.Where(r => !r.IsDefaultRole))
+                        {
+                            var isAssigned = user.RoleAssignments.Any(ra => ra.WebRoleId == role.Id);
+                            <option value="@role.Id" selected="@isAssigned">@role.Name</option>
+                        }
+                    </select>
+                </div>
+                <button class="btn btn-sm btn-outline-light">Save roles</button>
+            </form>
+        </div>
+    </div>
+}
+
+@if (!Model.Any())
+{
+    <div class="card p-4 text-center text-secondary">No one has logged in yet.</div>
+}

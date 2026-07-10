@@ -1,0 +1,26 @@
+@{
+    ViewData["Title"] = "Add server";
+}
+
+<h1 class="page-title">Add server</h1>
+
+<div class="card p-4" style="max-width: 560px;">
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" name="name" class="form-control" required maxlength="64" />
+            <span class="text-danger">@ViewData.ModelState["name"]?.Errors.FirstOrDefault()?.ErrorMessage</span>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Description <span class="text-secondary">(optional)</span></label>
+            <textarea name="description" class="form-control" rows="2" maxlength="256"></textarea>
+        </div>
+        <div class="alert alert-info small">
+            A new API key will be generated once you save. It's shown exactly one time —
+            put it straight into the server plugin's config.
+        </div>
+        <button type="submit" class="btn btn-accent">Create server</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div>

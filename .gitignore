@@ -1,0 +1,16 @@
+## .NET
+bin/
+obj/
+*.user
+
+## SQLite data & plugin uploads — never commit real data
+src/Warden.Web/App_Data/*.db
+src/Warden.Web/App_Data/*.db-shm
+src/Warden.Web/App_Data/*.db-wal
+src/Warden.Web/App_Data/PluginStorage/*
+!src/Warden.Web/App_Data/PluginStorage/.gitkeep
+
+## IDE
+.vs/
+.vscode/
+*.suo

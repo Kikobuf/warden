@@ -1,0 +1,85 @@
+@model List<Plugin>
+@inject CurrentUserService CurrentUser
+@{
+    ViewData["Title"] = "Plugins";
+    var perms = await CurrentUser.GetEffectivePermissionsAsync();
+    bool Can(string key) => perms.Contains(key);
+    var servers = (List<GameServer>)ViewBag.Servers;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="page-title mb-0">Plugins</h1>
+    @if (Can(Permissions.PluginsManage))
+    {
+        <a class="btn btn-accent" asp-action="Upload"><i class="bi bi-upload"></i> Upload plugin</a>
+    }
+</div>
+
+@foreach (var plugin in Model)
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h5 class="mb-1">@plugin.Name <span class="text-secondary fs-6">v@plugin.Version</span>
+                        @if (plugin.IsGlobal)
+                        {
+                            <span class="badge text-bg-info ms-1">Global — all servers</span>
+                        }
+                    </h5>
+                    <p class="text-secondary small mb-1">@plugin.Description</p>
+                    <p class="text-secondary small mb-0">
+                        @plugin.OriginalFileName · @((plugin.FileSizeBytes / 1024.0).ToString("0.#")) KB ·
+                        uploaded by @plugin.UploadedBy on @plugin.UploadedAt.ToString("yyyy-MM-dd") ·
+                        SHA-256 <code>@plugin.Sha256Hash[..12]…</code>
+                    </p>
+                </div>
+                @if (Can(Permissions.PluginsManage))
+                {
+                    <div class="d-flex gap-2">
+                        <form method="post" asp-action="ToggleGlobal" asp-route-id="@plugin.Id">
+                            @Html.AntiForgeryToken()
+                            <button class="btn btn-sm btn-outline-info">@(plugin.IsGlobal ? "Unset global" : "Make global")</button>
+                        </form>
+                        <form method="post" asp-action="Delete" asp-route-id="@plugin.Id"
+                              onsubmit="return confirm('Delete this plugin? Servers will stop receiving it on next startup.');">
+                            @Html.AntiForgeryToken()
+                            <button class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </div>
+                }
+            </div>
+
+            @if (!plugin.IsGlobal && Can(Permissions.PluginsManage))
+            {
+                <hr />
+                <form method="post" asp-action="Assign" asp-route-id="@plugin.Id" class="d-flex align-items-end gap-2 flex-wrap">
+                    @Html.AntiForgeryToken()
+                    <div>
+                        <label class="form-label small mb-1">Assign to servers</label>
+                        <select name="serverIds" class="form-select form-select-sm" multiple size="@Math.Min(servers.Count, 4)" style="min-width: 240px;">
+                            @foreach (var s in servers)
+                            {
+                                var isAssigned = plugin.Assignments.Any(a => a.GameServerId == s.Id);
+                                <option value="@s.Id" selected="@isAssigned">@s.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <button class="btn btn-sm btn-outline-light">Save assignments</button>
+                </form>
+            }
+            else if (!plugin.IsGlobal)
+            {
+                <hr />
+                <p class="text-secondary small mb-0">
+                    Assigned to: @(plugin.Assignments.Any() ? string.Join(", ", plugin.Assignments.Select(a => a.GameServer.Name)) : "no servers yet")
+                </p>
+            }
+        </div>
+    </div>
+}
+
+@if (!Model.Any())
+{
+    <div class="card p-4 text-center text-secondary">No plugins uploaded yet.</div>
+}

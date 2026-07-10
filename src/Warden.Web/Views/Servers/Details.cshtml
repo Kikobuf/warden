@@ -1,0 +1,80 @@
+@model GameServer
+@{
+    ViewData["Title"] = Model.Name;
+    int offlineThreshold = ViewBag.OfflineThreshold;
+    DateTime now = ViewBag.Now;
+    var online = Model.IsOnline(now, offlineThreshold);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="page-title mb-0">
+        <span class="status-dot @(online ? "status-online" : "status-offline")"></span>@Model.Name
+    </h1>
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back to servers</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card stat-card"><div class="stat-value">@Model.LastPlayerCount</div><div class="stat-label">Players</div></div></div>
+    <div class="col-md-3"><div class="card stat-card"><div class="stat-value">@(Model.LastTps?.ToString("0.0") ?? "—")</div><div class="stat-label">TPS</div></div></div>
+    <div class="col-md-6">
+        <div class="card stat-card">
+            <div class="stat-label">API key</div>
+            <code>@Model.ApiKeyPrefix…</code>
+            <div class="mt-2 d-flex gap-2">
+                <form method="post" asp-action="RegenerateKey" asp-route-id="@Model.Id"
+                      onsubmit="return confirm('Regenerating will invalidate the current key immediately. Continue?');">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-sm btn-outline-warning">Regenerate key</button>
+                </form>
+                <form method="post" asp-action="Delete" asp-route-id="@Model.Id"
+                      onsubmit="return confirm('Delete this server? This cannot be undone.');">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-sm btn-outline-danger">Delete server</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Connected players (@Model.PlayerSessions.Count)</div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead><tr><th>Nickname</th><th>User ID</th></tr></thead>
+                    <tbody>
+                        @foreach (var p in Model.PlayerSessions.OrderBy(p => p.PlayerNickname))
+                        {
+                            <tr><td><a asp-controller="Players" asp-action="Details" asp-route-userId="@p.PlayerUserId">@p.PlayerNickname</a></td><td class="text-secondary">@p.PlayerUserId</td></tr>
+                        }
+                        @if (!Model.PlayerSessions.Any())
+                        {
+                            <tr><td colspan="2" class="text-center text-secondary py-3">No players connected.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Assigned plugins</div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead><tr><th>Name</th><th>Version</th></tr></thead>
+                    <tbody>
+                        @foreach (var a in Model.PluginAssignments)
+                        {
+                            <tr><td>@a.Plugin.Name</td><td>@a.Plugin.Version</td></tr>
+                        }
+                        @if (!Model.PluginAssignments.Any())
+                        {
+                            <tr><td colspan="2" class="text-center text-secondary py-3">No plugins explicitly assigned (global plugins still apply).</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

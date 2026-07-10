@@ -1,0 +1,198 @@
+@model ModerationService.PlayerHistory
+@inject CurrentUserService CurrentUser
+@{
+    ViewData["Title"] = Model.LatestNickname;
+    var perms = await CurrentUser.GetEffectivePermissionsAsync();
+    bool Can(string key) => perms.Contains(key);
+    var now = DateTime.UtcNow;
+    var activeBan = Model.Bans.FirstOrDefault(b => b.IsActive(now));
+    var activeMute = Model.Mutes.FirstOrDefault(m => m.IsActive(now));
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="page-title mb-0">@Model.LatestNickname</h1>
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back to players</a>
+</div>
+<p class="text-secondary">User ID: <code>@Model.UserId</code> · First seen @Model.FirstSeenAt.ToString("yyyy-MM-dd") · Last seen @Model.LastSeenAt.ToString("yyyy-MM-dd HH:mm") UTC</p>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card p-3">
+            <h5>Ban status</h5>
+            @if (activeBan is not null)
+            {
+                <p class="mb-1"><span class="badge text-bg-danger">Banned</span> @activeBan.Reason</p>
+                <p class="text-secondary small mb-2">By @activeBan.IssuedBy on @activeBan.IssuedAt.ToString("yyyy-MM-dd HH:mm") UTC
+                    @(activeBan.ExpiresAt is null ? "· Permanent" : $"· Expires {activeBan.ExpiresAt:yyyy-MM-dd HH:mm} UTC")</p>
+                @if (Can(Permissions.ModerationRevoke))
+                {
+                    <form method="post" asp-action="Unban" asp-route-userId="@Model.UserId" class="d-flex gap-2">
+                        @Html.AntiForgeryToken()
+                        <input type="text" name="reason" class="form-control form-control-sm" placeholder="Reason (optional)" />
+                        <button class="btn btn-sm btn-outline-light">Unban</button>
+                    </form>
+                }
+            }
+            else
+            {
+                <p class="text-secondary mb-2">Not currently banned.</p>
+                @if (Can(Permissions.ModerationBan))
+                {
+                    <form method="post" asp-action="Ban" asp-route-userId="@Model.UserId" class="row g-2">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="nickname" value="@Model.LatestNickname" />
+                        <div class="col-12"><input type="text" name="reason" class="form-control form-control-sm" placeholder="Reason" required /></div>
+                        <div class="col-8"><input type="number" name="durationHours" class="form-control form-control-sm" placeholder="Duration in hours (blank = permanent)" /></div>
+                        <div class="col-4"><button class="btn btn-sm btn-outline-danger w-100">Ban</button></div>
+                    </form>
+                }
+            }
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-3">
+            <h5>Mute status</h5>
+            @if (activeMute is not null)
+            {
+                <p class="mb-1"><span class="badge text-bg-warning">Muted</span> @activeMute.Reason</p>
+                <p class="text-secondary small mb-2">By @activeMute.IssuedBy on @activeMute.IssuedAt.ToString("yyyy-MM-dd HH:mm") UTC
+                    @(activeMute.ExpiresAt is null ? "· Permanent" : $"· Expires {activeMute.ExpiresAt:yyyy-MM-dd HH:mm} UTC")</p>
+                @if (Can(Permissions.ModerationRevoke))
+                {
+                    <form method="post" asp-action="Unmute" asp-route-userId="@Model.UserId" class="d-flex gap-2">
+                        @Html.AntiForgeryToken()
+                        <input type="text" name="reason" class="form-control form-control-sm" placeholder="Reason (optional)" />
+                        <button class="btn btn-sm btn-outline-light">Unmute</button>
+                    </form>
+                }
+            }
+            else
+            {
+                <p class="text-secondary mb-2">Not currently muted.</p>
+                @if (Can(Permissions.ModerationMute))
+                {
+                    <form method="post" asp-action="Mute" asp-route-userId="@Model.UserId" class="row g-2">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="nickname" value="@Model.LatestNickname" />
+                        <div class="col-12"><input type="text" name="reason" class="form-control form-control-sm" placeholder="Reason" required /></div>
+                        <div class="col-8"><input type="number" name="durationHours" class="form-control form-control-sm" placeholder="Duration in hours (blank = permanent)" /></div>
+                        <div class="col-4"><button class="btn btn-sm btn-outline-warning w-100">Mute</button></div>
+                    </form>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    @if (Can(Permissions.ModerationWarn))
+    {
+        <div class="col-md-6">
+            <div class="card p-3">
+                <h5>Issue a warning</h5>
+                <form method="post" asp-action="Warn" asp-route-userId="@Model.UserId" class="d-flex gap-2">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="nickname" value="@Model.LatestNickname" />
+                    <input type="text" name="reason" class="form-control form-control-sm" placeholder="Reason" required />
+                    <button class="btn btn-sm btn-outline-info text-nowrap">Warn</button>
+                </form>
+            </div>
+        </div>
+    }
+    @if (Can(Permissions.ModerationKick))
+    {
+        <div class="col-md-6">
+            <div class="card p-3">
+                <h5>Log a kick</h5>
+                <p class="text-secondary small mb-2">This only records history — the plugin performs the actual in-game kick.</p>
+                <form method="post" asp-action="Kick" asp-route-userId="@Model.UserId" class="d-flex gap-2">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="nickname" value="@Model.LatestNickname" />
+                    <input type="text" name="reason" class="form-control form-control-sm" placeholder="Reason" required />
+                    <button class="btn btn-sm btn-outline-secondary text-nowrap">Log kick</button>
+                </form>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Ban history (@Model.Bans.Count)</div>
+            <ul class="list-group list-group-flush">
+                @foreach (var b in Model.Bans)
+                {
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <span>@b.Reason</span>
+                            <span class="badge @(b.IsActive(now) ? "text-bg-danger" : "text-bg-secondary")">@(b.IsActive(now) ? "Active" : (b.RevokedAt is not null ? "Revoked" : "Expired"))</span>
+                        </div>
+                        <div class="text-secondary small">By @b.IssuedBy on @b.IssuedAt.ToString("yyyy-MM-dd HH:mm") UTC</div>
+                    </li>
+                }
+                @if (!Model.Bans.Any())
+                {
+                    <li class="list-group-item text-secondary text-center">No bans on record.</li>
+                }
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Mute history (@Model.Mutes.Count)</div>
+            <ul class="list-group list-group-flush">
+                @foreach (var m in Model.Mutes)
+                {
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <span>@m.Reason</span>
+                            <span class="badge @(m.IsActive(now) ? "text-bg-warning" : "text-bg-secondary")">@(m.IsActive(now) ? "Active" : (m.RevokedAt is not null ? "Revoked" : "Expired"))</span>
+                        </div>
+                        <div class="text-secondary small">By @m.IssuedBy on @m.IssuedAt.ToString("yyyy-MM-dd HH:mm") UTC</div>
+                    </li>
+                }
+                @if (!Model.Mutes.Any())
+                {
+                    <li class="list-group-item text-secondary text-center">No mutes on record.</li>
+                }
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Warnings (@Model.Warnings.Count)</div>
+            <ul class="list-group list-group-flush">
+                @foreach (var w in Model.Warnings)
+                {
+                    <li class="list-group-item">
+                        <div>@w.Reason</div>
+                        <div class="text-secondary small">By @w.IssuedBy on @w.IssuedAt.ToString("yyyy-MM-dd HH:mm") UTC</div>
+                    </li>
+                }
+                @if (!Model.Warnings.Any())
+                {
+                    <li class="list-group-item text-secondary text-center">No warnings on record.</li>
+                }
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Kicks (@Model.Kicks.Count)</div>
+            <ul class="list-group list-group-flush">
+                @foreach (var k in Model.Kicks)
+                {
+                    <li class="list-group-item">
+                        <div>@k.Reason</div>
+                        <div class="text-secondary small">By @k.IssuedBy on @k.IssuedAt.ToString("yyyy-MM-dd HH:mm") UTC</div>
+                    </li>
+                }
+                @if (!Model.Kicks.Any())
+                {
+                    <li class="list-group-item text-secondary text-center">No kicks on record.</li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>
